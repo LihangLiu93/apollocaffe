@@ -1,0 +1,41 @@
+{
+    "data": {
+        "train_file": "/home/pig/apollocaffe-master/examples/english_input_predictor3/train_indices.txt",
+        "test_file": "/home/pig/apollocaffe-master/examples/english_input_predictor3/test_indices.txt"
+    },
+    "solver": {
+        "base_lr": 29.13,
+        "max_iter": 500001,
+        "test_iter": 781,
+        "test_interval": 3000,
+        "momentum": 0.5,
+        "random_seed": 22,
+        "clip_gradients": 0.1,
+        "gamma": 0.8,
+        "stepsize": 10000,
+        "weights": ""
+    },
+    "logging": {
+        "display_interval": 100,
+        "snapshot_prefix": "/home/pig/apollocaffe-master/examples/english_input_predictor3/tmp/reinspect",
+        "snapshot_interval": 10000,
+        "schematic_path": "/home/pig/apollocaffe-master/examples/english_input_predictor3/tmp/reinspect.png",
+        "graph_prefix": "/home/pig/apollocaffe-master/examples/english_input_predictor3/tmp/history",
+        "log_file": "/home/pig/apollocaffe-master/examples/english_input_predictor3/tmp/log_brainwash.txt",
+        "graph_interval": 500
+    },
+    "net": {
+        "batch_size": 128,
+        "init_range": 0.1,
+        "max_len": 100,
+        "max_label_len": 25,
+        "lstm_num_stacks": 3,
+        "lstm_num_cells": 250,
+        "dropout_ratio": 0.15,
+        "vocab_size": 38,
+        "unknown_symbol": 35,
+        "start_symbol": 36,
+        "zero_symbol": 37,
+        "whitespace_symbol": 34  
+    }
+}
