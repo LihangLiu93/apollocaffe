@@ -72,6 +72,8 @@ class SnapshotLogger(object):
                     (strftime("%Y-%m-%d %H:%M:%S"), idx, filename)
                 print(log_line)
                 meta_data['apollo_net'].save(filename)
+		filename = '%s_%d.caffemodel' % (self.snapshot_prefix, idx)		# added by lihang liu
+		meta_data['apollo_net'].save(filename)
             except Exception as e:
                 print e
                 print('Saving failed')
