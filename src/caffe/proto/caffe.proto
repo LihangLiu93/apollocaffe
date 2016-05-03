@@ -298,7 +298,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 137 (last added: reduction_param)
+// LayerParameter next available layer-specific ID: 138 (last added: reduction_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -380,6 +380,7 @@ message LayerParameter {
   optional SoftmaxParameter softmax_param = 125;
   optional SPPParameter spp_param = 132;
   optional SliceParameter slice_param = 126;
+  optional SumParameter sum_param = 137;
   optional TanHParameter tanh_param = 127;
   optional ThresholdParameter threshold_param = 128;
   optional WindowDataParameter window_data_param = 129;
@@ -937,6 +938,10 @@ message SoftmaxParameter {
   optional int32 axis = 2 [default = 1];
 }
 
+message SumParameter  {
+  optional uint32 num_output = 1; // The number of outputs for the layer
+}
+
 message TanHParameter {
   enum Engine {
     DEFAULT = 0;
@@ -1044,6 +1049,7 @@ message V1LayerParameter {
     SOFTMAX_LOSS = 21;
     SPLIT = 22;
     SLICE = 33;
+    Sum= 40;
     TANH = 23;
     WINDOW_DATA = 24;
     THRESHOLD = 31;
@@ -1084,6 +1090,7 @@ message V1LayerParameter {
   optional SigmoidParameter sigmoid_param = 38;
   optional SoftmaxParameter softmax_param = 39;
   optional SliceParameter slice_param = 31;
+  optional SumParameter sum_param = 43;
   optional TanHParameter tanh_param = 37;
   optional ThresholdParameter threshold_param = 25;
   optional WindowDataParameter window_data_param = 20;
