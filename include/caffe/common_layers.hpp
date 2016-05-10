@@ -173,6 +173,44 @@ class ConcatLayer : public Layer<Dtype> {
 };
 
 /**
+ * @brief element wise multiply. (n,c)  .* {1}_{n}*(c)  =  (n,c)
+ *  
+ *
+ * TODO(dox): thorough documentation for Forward, Backward, and proto params.
+ */
+template <typename Dtype>
+class DotMultiplyLayer : public Layer<Dtype> {
+ public:
+  explicit DotMultiplyLayer(const LayerParameter& param)
+      : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const  {
+    return "DotMultiply";
+  }
+  virtual inline int ExactNumBottomBlobs() const { return 1; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  int num_;
+  int dim_;
+  Blob<Dtype> weights_multiplier_;
+  Blob<Dtype> temp_;
+};
+
+/**
  * @brief Compute elementwise operations, such as product and sum,
  *        along multiple input Blobs.
  *
@@ -602,6 +640,8 @@ class SumLayer : public Layer<Dtype> {
  public:
   explicit SumLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
+  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 
@@ -621,11 +661,9 @@ class SumLayer : public Layer<Dtype> {
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
-  Blob<Dtype> temp_;
-  int num_output_;
-  /// sum_multiplier is used to carry out sum using BLAS
+  bool bias_term_;
   Blob<Dtype> sum_multiplier_;
-  Blob<Dtype> sum_multiplier_2_;
+  Blob<Dtype> bias_multiplier_;
 };
 
 /**

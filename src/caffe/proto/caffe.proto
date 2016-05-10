@@ -298,7 +298,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 138 (last added: reduction_param)
+// LayerParameter next available layer-specific ID: 139 (last added: reduction_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -351,6 +351,7 @@ message LayerParameter {
   optional ContrastiveLossParameter contrastive_loss_param = 105;
   optional ConvolutionParameter convolution_param = 106;
   optional DataParameter data_param = 107;
+  optional DotMultiplyParameter dot_multiply_param = 138;
   optional DropoutParameter dropout_param = 108;
   optional DummyDataParameter dummy_data_param = 109;
   optional EltwiseParameter eltwise_param = 110;
@@ -530,6 +531,10 @@ message DataParameter {
   optional bool mirror = 6 [default = false];
   // Force the encoded image to have 3 color channels
   optional bool force_encoded_color = 9 [default = false];
+}
+
+message DotMultiplyParameter  {
+  optional FillerParameter weight_filler = 1; // The filler for the bias
 }
 
 message DropoutParameter {
@@ -939,7 +944,8 @@ message SoftmaxParameter {
 }
 
 message SumParameter  {
-  optional uint32 num_output = 1; // The number of outputs for the layer
+  optional bool bias_term = 1 [default = true]; // whether to have bias terms
+  optional FillerParameter bias_filler = 2; // The filler for the bias
 }
 
 message TanHParameter {
@@ -1022,6 +1028,7 @@ message V1LayerParameter {
     CONVOLUTION = 4;
     DATA = 5;
     DECONVOLUTION = 39;
+    DOT_MULTIPLY = 41;
     DROPOUT = 6;
     DUMMY_DATA = 32;
     EUCLIDEAN_LOSS = 7;

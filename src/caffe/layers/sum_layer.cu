@@ -11,30 +11,22 @@ template <typename Dtype>
 void SumLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
-  //Forward_cpu(bottom, top); return;
-
   const Dtype* bottom_data = bottom[0]->gpu_data();
   Dtype* top_data = top[0]->mutable_gpu_data();
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / num;
 
-  if (num_output_ == 1) {
-    caffe_gpu_gemv<Dtype>(CblasNoTrans, num, dim, 1, bottom_data,
+  caffe_gpu_gemv<Dtype>(CblasNoTrans, num, dim, 1, bottom_data,
         sum_multiplier_.gpu_data(), 0., top_data);  // summer
-  } else {
-    caffe_gpu_gemv<Dtype>(CblasNoTrans, num, dim, 1, bottom_data,
-        sum_multiplier_.gpu_data(), 0., temp_.mutable_gpu_data());  // summer
-    caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, num_output_, 1, 1,
-        temp_.gpu_data(), sum_multiplier_2_.gpu_data(), 0., top_data);  // summer
+  if (bias_term_) {
+    caffe_gpu_gemv<Dtype>(CblasNoTrans, num, 1, (Dtype)1., bias_multiplier_.gpu_data(),
+        this->blobs_[0]->gpu_data(), (Dtype)1., top_data);
   }
-
 }
 
 template <typename Dtype>
 void SumLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-
-  //Backward_cpu(top, propagate_down, bottom); return;
 
   const Dtype* top_diff = top[0]->gpu_diff();
   Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
@@ -42,15 +34,15 @@ void SumLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / num;
 
-  if (num_output_ == 1) {
-    caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, 1,
+  caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, 1,
         top_diff, sum_multiplier_.gpu_data(), 0., bottom_diff);
-  } else {
-    caffe_gpu_gemv<Dtype>(CblasNoTrans, num, num_output_, 1, top_diff,
-        sum_multiplier_2_.gpu_data(), 0., temp_.mutable_gpu_data());  // summer
-    caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, 1,
-        temp_.gpu_data(), sum_multiplier_.gpu_data(), 0., bottom_diff);  // summer
+  if (bias_term_ && this->param_propagate_down_[0]) {
+    // Gradient with respect to bias
+    caffe_gpu_gemv<Dtype>(CblasNoTrans, 1, num, (Dtype)1., top_diff,
+        bias_multiplier_.gpu_data(), (Dtype)1.,
+        this->blobs_[0]->mutable_gpu_diff());
   }
+  
 }
 
 

@@ -9,25 +9,44 @@ namespace caffe {
 
 
 template <typename Dtype>
+void SumLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top) {
+  bias_term_ = this->layer_param_.sum_param().bias_term();
+
+  if (this->blobs_.size() > 0) {
+    LOG(INFO) << "Skipping parameter initialization";
+  } else {
+    if (bias_term_) {
+      this->blobs_.resize(1);
+      vector<int> bias_shape(1,1);
+      this->blobs_[0].reset(new Blob<Dtype>(bias_shape));
+      shared_ptr<Filler<Dtype> > bias_filler(GetFiller<Dtype>(
+          this->layer_param_.sum_param().bias_filler()));
+      bias_filler->Fill(this->blobs_[0].get());
+    } 
+  }  // parameter initialization
+  this->param_propagate_down_.resize(this->blobs_.size(), true);
+}
+
+
+template <typename Dtype>
 void SumLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
 
-  num_output_ = this->layer_param_.sum_param().num_output();
-
-  top[0]->Reshape(bottom[0]->num(), num_output_, 1, 1);
-
-  temp_.Reshape(bottom[0]->num(), 1, 1, 1);
+  top[0]->Reshape(bottom[0]->num(), 1, 1, 1);
 
   sum_multiplier_.Reshape(1, bottom[0]->channels(),
       bottom[0]->height(), bottom[0]->width());
   Dtype* multiplier_data = sum_multiplier_.mutable_cpu_data();
   caffe_set(sum_multiplier_.count(), Dtype(1), multiplier_data);
-
-  sum_multiplier_2_.Reshape(1, num_output_, 1, 1);
-  Dtype* multiplier_data_2 = sum_multiplier_2_.mutable_cpu_data();
-  caffe_set(sum_multiplier_2_.count(), Dtype(1), multiplier_data_2);
-
+  // Set up the bias multiplier
+  if (bias_term_) {
+    vector<int> bias_shape(1, bottom[0]->num());
+    bias_multiplier_.Reshape(bias_shape);
+    caffe_set(bottom[0]->num(), Dtype(1), bias_multiplier_.mutable_cpu_data());
+  }
 }
+
 
 template <typename Dtype>
 void SumLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
@@ -38,21 +57,14 @@ void SumLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / num;
 
-  if (num_output_ == 1) {
-    caffe_cpu_gemv<Dtype>(CblasNoTrans, num, dim, 1, bottom_data,
+  caffe_cpu_gemv<Dtype>(CblasNoTrans, num, dim, 1, bottom_data,
         sum_multiplier_.cpu_data(), 0., top_data);  // summer
-  } else {
-    caffe_cpu_gemv<Dtype>(CblasNoTrans, num, dim, 1, bottom_data,
-        sum_multiplier_.cpu_data(), 0., temp_.mutable_cpu_data());  // summer
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, num_output_, 1, 1,
-        temp_.cpu_data(), sum_multiplier_2_.cpu_data(), 0., top_data);  // summer
-
-    /*for (int i = 0; i < num; ++i) {
-      caffe_set(num_output_, temp_.cpu_data()[i], top_data + (*top)[0]->offset(i));
-    }*/
+  if (bias_term_) {
+    caffe_cpu_gemv<Dtype>(CblasNoTrans, num, 1, (Dtype)1., bias_multiplier_.cpu_data(),
+        this->blobs_[0]->cpu_data(), (Dtype)1., top_data);
   }
-
 }
+
 
 template <typename Dtype>
 void SumLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
@@ -62,22 +74,13 @@ void SumLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   int num = bottom[0]->num();
   int dim = bottom[0]->count() / num;
 
-  if (num_output_ == 1) {
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, 1,
-        top_diff, sum_multiplier_.cpu_data(), 0., bottom_diff);
-    /*for (int i = 0; i < num; ++i) {
-      caffe_set(dim, top_diff[i], bottom_diff + (*bottom)[0]->offset(i));
-    }*/
-  } else {
-    caffe_cpu_gemv<Dtype>(CblasNoTrans, num, num_output_, 1, top_diff,
-        sum_multiplier_2_.cpu_data(), 0., temp_.mutable_cpu_data());  // summer
-    
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, 1,
-        temp_.cpu_data(), sum_multiplier_.cpu_data(), 0., bottom_diff);  // summer
-
-    /*for (int i = 0; i < num; ++i) {
-      caffe_set(dim, temp_.cpu_data()[i], bottom_diff + (*bottom)[0]->offset(i));
-    }*/
+  caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num, dim, 1, (Dtype)1.,
+        top_diff, sum_multiplier_.cpu_data(), (Dtype)0., bottom_diff);
+  if (bias_term_ && this->param_propagate_down_[0]) {
+    // Gradient with respect to bias
+    caffe_cpu_gemv<Dtype>(CblasNoTrans, 1, num, (Dtype)1., top_diff,
+        bias_multiplier_.cpu_data(), (Dtype)1.,
+        this->blobs_[0]->mutable_cpu_diff());
   }
 }
 
