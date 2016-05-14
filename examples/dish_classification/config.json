@@ -1,0 +1,37 @@
+{
+    "data": {
+        "test_idl": "imglist_test_316.txt",
+        "train_idl": "imglist_train_316.txt",
+        "deploy_idl": "dishes_315.txt",
+        "idl_mean": "/home/apexgpu/Desktop/caffe/caffe/DownloadedModels/bvlc_alexnet/imagenet_mean.binaryproto"
+    },
+    "solver": {
+        "base_lr": 0.0001,
+        "max_iter": 20001,
+        "test_iter": 23,
+        "test_interval": 100,
+        "momentum": 0.9,
+        "random_seed": 2,
+        "gamma": 0.1,
+        "stepsize": 10000,
+        "weights": ""
+    },
+    "logging": {
+        "display_interval": 100,
+        "snapshot_prefix": "./tmp/reinspect",
+        "snapshot_interval": 10000,
+        "schematic_path": "./tmp/reinspect.png",
+        "graph_prefix": "./tmp/history",
+        "log_file": "./tmp/log_brainwash.txt",
+        "graph_interval": 500,
+        "deploy_out_dir": "./dishes_315_output/",
+        "classes_file": "classes.lst"
+    },
+    "net" : {
+        "num_per_class": 20,
+        "batch_size": 8,
+        "new_width": 256,
+        "new_height": 256,
+        "crop_size":227
+    }
+}
