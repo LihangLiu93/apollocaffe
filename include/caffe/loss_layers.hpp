@@ -508,6 +508,44 @@ class InfogainLossLayer : public LossLayer<Dtype> {
   Blob<Dtype> infogain_;
 };
 
+
+/**
+ * MMDLoss: first compute mean of two bottom input, then use euclidean loss to calculate
+ * final loss.
+ */
+template <typename Dtype>
+class MMDLossLayer : public LossLayer<Dtype> {
+ public:
+  explicit MMDLossLayer(const LayerParameter& param)
+      : LossLayer<Dtype>(param), diff_() {}
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+
+  virtual inline const char* type() const { return "MMDLoss"; }
+  virtual inline bool AllowForceBackward(const int bottom_index) const {
+    return bottom_index != 1;
+  }
+
+ protected:
+  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top);
+  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+  int num_;
+  int dim_;
+  Blob<Dtype> bottom_mean0_;
+  Blob<Dtype> bottom_mean1_;
+  Blob<Dtype> bottom_multiplier_;
+  Blob<Dtype> diff_;
+};
+
+
+
 /**
  * @brief Computes the multinomial logistic loss for a one-of-many
  *        classification task, directly taking a predicted probability
