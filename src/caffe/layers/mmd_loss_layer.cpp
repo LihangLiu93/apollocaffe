@@ -38,19 +38,19 @@ void MMDLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* top_data = top[0]->mutable_cpu_data();
 
   // calculate bottom mean 0
-  caffe_cpu_gemv<Dtype>(CblasTrans, dim_, num_, (Dtype)1.0/num_, bottom_data0, 
-                bottom_multiplier_.cpu_data(), (Dtype)0., bottom_mean0_.mutable_cpu_data());
+  caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans, 1, dim_, num_, (Dtype)1.0/num_,  
+                bottom_multiplier_.cpu_data(), bottom_data0, (Dtype)0., bottom_mean0_.mutable_cpu_data());
 
   // calculate bottom mean 1
-  caffe_cpu_gemv<Dtype>(CblasTrans, dim_, num_, (Dtype)1.0/num_, bottom_data1, 
-                bottom_multiplier_.cpu_data(), (Dtype)0., bottom_mean1_.mutable_cpu_data());
+  caffe_gpu_gemm<Dtype>(CblasTrans, CblasNoTrans, 1, dim_, num_, (Dtype)1.0/num_,  
+                bottom_multiplier_.cpu_data(), bottom_data1, (Dtype)0., bottom_mean1_.mutable_cpu_data());
 
   // calculate diff of mean0 and mean1
   caffe_sub<Dtype>(dim_, bottom_mean0_.cpu_data(),
             bottom_mean1_.cpu_data(), diff_.mutable_cpu_data());
 
   Dtype dot = caffe_cpu_dot<Dtype>(dim_, diff_.cpu_data(), diff_.cpu_data());
-  Dtype loss = dot / num_ / Dtype(2);
+  Dtype loss = dot / dim_ / Dtype(2);
   top_data[0] = loss;
 }
 
@@ -62,7 +62,7 @@ void MMDLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
   for (int i = 0; i < 2; ++i) {
     if (propagate_down[i]) {
       const Dtype sign = (i == 0) ? 1.0 : -1.0;
-      caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_, dim_, 1, sign*top_diff[0]/num_,
+      caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_, dim_, 1, sign*top_diff[0]/dim_,
         bottom_multiplier_.cpu_data(), diff_.cpu_data(), (Dtype)0., bottom[i]->mutable_cpu_diff());
 
     }
