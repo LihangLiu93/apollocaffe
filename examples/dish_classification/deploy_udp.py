@@ -19,14 +19,25 @@ import socket
 # # # #  interface
 
 
-def classify(net, impath, image_mean):
+def classify(net, impath, regions_list, image_mean):
     im = imread(impath)
-    jit_image = cv2.resize(im, (256, 256))
-    image = image_to_h5(jit_image, image_mean, crop_size=227, image_scaling=1.0)
-    input_en = {"image":image}
+    batch_size = len(regions_list)/4
+    image_batch = np.zeros((batch_size, 3, 227,227))
+    for i in range(batch_size):
+        x0 = regions_list[i*4+0]
+        y0 = regions_list[i*4+1]
+        x1 = regions_list[i*4+2]
+        y1 = regions_list[i*4+3]
+        sub_image = im[x0:y0,x1:y1,:]
+        jit_image = cv2.resize(sub_image, (256, 256))
+        image = image_to_h5(jit_image, image_mean, crop_size=227, image_scaling=1.0)
+        image_batch[i,:,:,:] = image
+    input_en = {"image":image_batch}
     probs = forward(net, input_en, deploy=True)
-    pred_class, value = get_max_index(probs[0,:])
-    res = "%d %.03f" % (pred_class, value)
+    res = ''
+    for i in range(probs.shape[0]):
+        index, value = get_max_index(probs[i,:])
+        res += "%d %.03f"%(index, value)
     return res
 
 # # # #
