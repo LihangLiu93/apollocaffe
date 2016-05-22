@@ -24,11 +24,11 @@ def classify(net, impath, regions_list, image_mean):
     batch_size = len(regions_list)/4
     image_batch = np.zeros((batch_size, 3, 227,227))
     for i in range(batch_size):
-        x0 = regions_list[i*4+0]
-        y0 = regions_list[i*4+1]
-        x1 = regions_list[i*4+2]
-        y1 = regions_list[i*4+3]
-        sub_image = im[x0:y0,x1:y1,:]
+        x0 = int(regions_list[i*4+0])
+        y0 = int(regions_list[i*4+1])
+        x1 = int(regions_list[i*4+2])
+        y1 = int(regions_list[i*4+3])
+        sub_image = im[x0:x1,y0:y1,:]
         jit_image = cv2.resize(sub_image, (256, 256))
         image = image_to_h5(jit_image, image_mean, crop_size=227, image_scaling=1.0)
         image_batch[i,:,:,:] = image
@@ -52,9 +52,11 @@ def run_socket(net, port, image_mean):
         print("[%s:%s] connect" % (remoteHost, remotePort))     # 
         print "revcData: ", revcData  
 
-        impath = revcData.strip()
+        recv_splits = revcData.strip().split()
+        impath = recv_splits[0]
+        regions_list = recv_splits[1:]
         if os.path.exists(impath) and impath[-4:]=='.jpg':
-            sendstr = classify(net, impath, image_mean)
+            sendstr = classify(net, impath, regions_list, image_mean)
         else:
             sendstr = 'unknown path %s'% impath 
           
