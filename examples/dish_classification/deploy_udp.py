@@ -30,7 +30,6 @@ def classify(net, impath, regions_list, image_mean):
         y1 = int(regions_list[i*4+3])
         sub_image = im[x0:x1,y0:y1,:]
         jit_image = cv2.resize(sub_image, (256, 256))
-        jit_image = jit_image[256/2-227/2:227+(256/2-227/2),256/2-227/2:227+(256/2-227/2),:]
         image = image_to_h5(jit_image, image_mean, crop_size=227, image_scaling=1.0)
         image_batch[i,:,:,:] = image
     input_en = {"image":image_batch}
