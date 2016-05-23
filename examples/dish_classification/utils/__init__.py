@@ -23,7 +23,7 @@ def image_to_h5(I, data_mean, crop_size=227, image_scaling = 1.0):
     I = I.astype(np.float32) / image_scaling - data_mean
     w = I.shape(0)
     h = I.shape(1)
-    I = I[w/2-crop_size/2:crop_size+(w/2-crop_size/2), w/2-crop_size/2:crop_size+(w/2-crop_size/2), :]
+    I = I[w/2-crop_size/2:crop_size+(w/2-crop_size/2), h/2-crop_size/2:crop_size+(h/2-crop_size/2), :]
 
     # MA: model expects BGR ordering
     I = I[:, :, (2, 1, 0)]
